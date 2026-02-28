@@ -8,6 +8,9 @@
 // スクリプトプロパティから取得するキー名
 const PROP_GEMINI_API_KEY = 'GEMINI_API_KEY';
 const PROP_MATTERMOST_WEBHOOK_URL = 'MATTERMOST_WEBHOOK_URL';
+const PROP_MATTERMOST_USERNAME = 'MATTERMOST_USERNAME'; // 任意: Mattermostの投稿者名
+const PROP_MATTERMOST_ICON_EMOJI = 'MATTERMOST_ICON_EMOJI'; // 任意: Mattermostのアイコン(絵文字、例: :newspaper:)
+const PROP_MATTERMOST_CHANNEL = 'MATTERMOST_CHANNEL'; // 任意: 投稿先チャンネルID (例: abcdefg1234567)
 
 // 取得対象とする記事の公開時刻（何時間前までの記事を取得するか）
 const FETCH_HOURS_AGO = 24; 
@@ -255,6 +258,9 @@ ${articlesText}
 function postToMattermost(text) {
   const props = PropertiesService.getScriptProperties();
   const webhookUrl = props.getProperty(PROP_MATTERMOST_WEBHOOK_URL);
+  const username = props.getProperty(PROP_MATTERMOST_USERNAME); // 投稿者名をプロパティから取得
+  const iconEmoji = props.getProperty(PROP_MATTERMOST_ICON_EMOJI); // アイコン絵文字をプロパティから取得
+  const channel = props.getProperty(PROP_MATTERMOST_CHANNEL); // 投稿先チャンネルIDをプロパティから取得
   
   if (!webhookUrl) {
     Logger.log('[Error] スクリプトプロパティに MATTERMOST_WEBHOOK_URL が設定されていません。');
@@ -263,10 +269,22 @@ function postToMattermost(text) {
   
   const payload = {
     "text": text,
-    // オプション機能（Mattermost設定などで上書き可能ですがここで指定もできます）
-    // "username": "News Summary Bot",
-    // "icon_url": "https://example.com/bot_icon.png"
   };
+  
+  // プロパティにユーザー名が設定されている場合のみpayloadに追加（設定がなければwebhookのデフォルトになります）
+  if (username) {
+    payload["username"] = username;
+  }
+  
+  // プロパティにアイコン絵文字が設定されている場合のみpayloadに追加
+  if (iconEmoji) {
+    payload["icon_emoji"] = iconEmoji;
+  }
+
+  // プロパティにチャンネルが設定されている場合のみpayloadに追加
+  if (channel) {
+    payload["channel"] = channel;
+  }
   
   const options = {
     "method": "post",
